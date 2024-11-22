@@ -7,7 +7,9 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] py-12 px-4">
       <div className="text-center space-y-8 max-w-3xl">
         <div className="space-y-4">
-          <Shield className="h-16 w-16 mx-auto text-primary" />
+          <div className="flex justify-center">
+            <Shield className="h-16 w-16 text-primary" />
+          </div>
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
             Secure Authentication System
           </h1>
@@ -17,12 +19,12 @@ export default function Home() {
         </div>
 
         <div className="flex flex-wrap justify-center gap-4">
-          <Button asChild size="lg">
-            <Link href="/auth/register">Get Started</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/auth/login">Sign In</Link>
-          </Button>
+          <Link href="/auth/register" passHref>
+            <Button size="lg">Get Started</Button>
+          </Link>
+          <Link href="/auth/login" passHref>
+            <Button variant="outline" size="lg">Sign In</Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3 pt-12">

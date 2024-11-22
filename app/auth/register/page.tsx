@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Github, Mail } from 'lucide-react';
-import { PhoneInput } from '@/components/phone-input';
+import { Github } from 'lucide-react';
+import { PhoneInputField } from '@/components/phone-input';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -72,7 +72,7 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'github') => {
+  const handleSocialLogin = async (provider: string) => {
     try {
       setIsLoading(true);
       await signIn(provider, { callbackUrl: '/dashboard' });
@@ -180,7 +180,7 @@ export default function RegisterPage() {
 
           <div>
             <Label htmlFor="phone">Phone Number</Label>
-            <PhoneInput control={control} name="phone" />
+            <PhoneInputField control={control} name="phone" />
             {errors.phone && (
               <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
             )}

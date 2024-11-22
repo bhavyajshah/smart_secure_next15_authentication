@@ -60,7 +60,7 @@ export default function Navbar() {
                   <UserCircle className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuItem className="flex-col items-start">
                   <div className="text-sm font-medium">{session.user?.email}</div>
                   <div className="text-xs text-muted-foreground">
@@ -88,9 +88,9 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild>
-              <Link href="/auth/login">Sign In</Link>
-            </Button>
+            <Link href="/auth/login" passHref>
+              <Button>Sign In</Button>
+            </Link>
           )}
         </div>
       </div>
