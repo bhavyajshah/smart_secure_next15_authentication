@@ -1,6 +1,8 @@
 "use client";
 
-import { Line } from 'react-chartjs-2';
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+import { format, subDays } from 'date-fns';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,8 +14,8 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { format, subDays } from 'date-fns';
 
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -25,6 +27,12 @@ ChartJS.register(
   Filler
 );
 
+// Dynamically import Line chart with no SSR
+const Line = dynamic(
+  () => import('react-chartjs-2').then(mod => mod.Line),
+  { ssr: false }
+);
+
 interface ActivityChartProps {
   data: Array<{
     timestamp: string;
@@ -33,13 +41,27 @@ interface ActivityChartProps {
 }
 
 export function ActivityChart({ data }: ActivityChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="h-[300px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   // Process data for the last 30 days
   const today = new Date();
   const dates = Array.from({ length: 30 }, (_, i) => subDays(today, i));
-  
+
   const successCounts = new Map<string, number>();
   const failureCounts = new Map<string, number>();
-  
+
   dates.forEach(date => {
     const dateStr = format(date, 'yyyy-MM-dd');
     successCounts.set(dateStr, 0);

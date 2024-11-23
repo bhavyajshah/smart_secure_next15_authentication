@@ -1,7 +1,12 @@
 "use client";
 
+import dynamic from 'next/dynamic';
 import { Shield, CheckCircle, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+
+const DynamicProgress = dynamic(() => import('@/components/ui/progress').then(mod => mod.Progress), {
+  ssr: false,
+});
 
 interface SecurityOverviewProps {
   score: number;
@@ -33,7 +38,7 @@ export function SecurityOverview({ score }: SecurityOverviewProps) {
             {score}%
           </span>
         </div>
-        <Progress value={score} className="h-2" />
+        <DynamicProgress value={score} className="h-2" />
       </div>
 
       <div className="space-y-4">

@@ -30,7 +30,10 @@ export interface IUser extends mongoose.Document {
   password?: string;
   name?: string;
   image?: string;
-  phone?: string;
+  phone: string;
+  isPhoneVerified: boolean;
+  phoneVerificationCode?: string;
+  phoneVerificationCodeExpiry?: Date;
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpiry?: Date;
@@ -53,6 +56,7 @@ export interface IUser extends mongoose.Document {
     loginAlerts: boolean;
     newsletter: boolean;
     theme: 'light' | 'dark' | 'system';
+    rememberMe: boolean;
   };
   loginHistory: Array<{
     timestamp: Date;
@@ -84,8 +88,15 @@ const userSchema = new mongoose.Schema<IUser>(
     image: String,
     phone: {
       type: String,
+      required: [true, 'Please provide a phone number'],
       trim: true,
     },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    phoneVerificationCode: String,
+    phoneVerificationCodeExpiry: Date,
     isVerified: {
       type: Boolean,
       default: false,
@@ -166,6 +177,10 @@ const userSchema = new mongoose.Schema<IUser>(
         enum: ['light', 'dark', 'system'],
         default: 'system',
       },
+      rememberMe: {
+        type: Boolean,
+        default: false,
+      },
     },
     loginHistory: [{
       timestamp: {
@@ -204,11 +219,11 @@ userSchema.methods.isLocked = function (): boolean {
 
 userSchema.methods.incrementLoginAttempts = async function (): Promise<void> {
   this.failedLoginAttempts += 1;
-  
+
   if (this.failedLoginAttempts >= 5) {
     this.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 minutes
   }
-  
+
   await this.save();
 };
 

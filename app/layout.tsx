@@ -28,12 +28,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body className={inter.className} suppressHydrationWarning>
         <ThemeProviderWrapper
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          suppressHydrationWarning
         >
           <NextAuthProvider>
             <div className="min-h-screen bg-background">
@@ -49,4 +53,3 @@ export default function RootLayout({
     </html>
   )
 }
-
