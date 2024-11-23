@@ -26,6 +26,12 @@ export async function middleware(request: NextRequest) {
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   headers.set('X-XSS-Protection', '1; mode=block');
 
+  const response = NextResponse.next({
+    request: {
+      headers: headers,
+    },
+  });
+
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
   const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
   const isPremiumPage = request.nextUrl.pathname.startsWith('/premium');
@@ -33,9 +39,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow access to verification pages without authentication
   if (isVerifyPage) {
-    return NextResponse.next({
-      headers
-    });
+    return response;
   }
 
   // Redirect authenticated users away from auth pages
@@ -65,9 +69,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/verify-email', request.url));
   }
 
-  return NextResponse.next({
-    headers
-  });
+  return response;
 }
 
 export const config = {

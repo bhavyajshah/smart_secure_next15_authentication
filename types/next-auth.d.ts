@@ -4,12 +4,11 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      email: string;
-      name?: string;
+      email: string | null;
+      name?: string | null;
       role: string;
       subscription: string;
-      provider?: string;
-      emailVerified?: boolean;
+      emailVerified: boolean;
     };
   }
 
@@ -19,8 +18,7 @@ declare module "next-auth" {
     name?: string;
     role: string;
     subscription: string;
-    provider?: string;
-    emailVerified?: boolean;
+    emailVerified: boolean;
   }
 }
 
@@ -29,7 +27,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     subscription: string;
-    provider?: string;
-    emailVerified?: boolean;
+    emailVerified: boolean;
   }
 }

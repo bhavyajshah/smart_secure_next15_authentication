@@ -5,7 +5,6 @@ import GitHubProvider from 'next-auth/providers/github';
 import connectDB from '@/lib/db';
 import User from '@/lib/models/user';
 import { verifyTOTP } from '@/lib/2fa';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { getDeviceInfo } from '@/lib/utils/security';
 
 export const authOptions: NextAuthOptions = {
@@ -23,15 +22,6 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const ip = req.headers?.['x-forwarded-for'] || 'unknown';
-          const userAgent = req.headers?.['user-agent'] || 'unknown';
-
-          // Check rate limiting
-          const canLogin = await checkRateLimit('login', ip);
-          if (!canLogin) {
-            throw new Error('Too many login attempts. Please try again later.');
-          }
-
           await connectDB();
 
           const user = await User.findOne({ email: credentials.email });
@@ -39,39 +29,24 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // Check if email is verified
-          if (!user.isVerified) {
-            throw new Error('Please verify your email before logging in.');
-          }
-
-          // Check if account is locked
-          if (user.isLocked()) {
-            throw new Error('Account is temporarily locked. Please try again later.');
-          }
-
           const isValid = await user.comparePassword(credentials.password);
           if (!isValid) {
-            await user.incrementLoginAttempts();
             return null;
           }
 
           // Check 2FA if enabled
-          if (user.twoFactorEnabled) {
-            if (!credentials.totpCode) {
-              throw new Error('2FA_REQUIRED');
-            }
-
+          if (user.twoFactorEnabled && credentials.totpCode) {
             const isValidTOTP = verifyTOTP(user.twoFactorSecret!, credentials.totpCode);
             if (!isValidTOTP) {
-              throw new Error('Invalid 2FA code');
+              return null;
             }
           }
 
-          // Reset login attempts on successful login
-          await user.resetLoginAttempts();
-
-          // Update last login and device info
+          // Update user info
+          const ip = req.headers?.['x-forwarded-for'] || 'unknown';
+          const userAgent = req.headers?.['user-agent'] || 'unknown';
           const deviceInfo = getDeviceInfo(userAgent, ip as string);
+
           user.lastLogin = new Date();
           user.loginHistory.push({
             timestamp: new Date(),
@@ -81,9 +56,9 @@ export const authOptions: NextAuthOptions = {
             success: true
           });
 
-          // Add or update device information
           const deviceId = `${deviceInfo.browser}-${deviceInfo.os}`.toLowerCase();
-          const existingDevice = user.devices.find((d: { id: string; }) => d.id === deviceId);
+          const existingDevice = user.devices.find(d => d.id === deviceId);
+
           if (existingDevice) {
             existingDevice.lastActive = new Date();
             existingDevice.ip = deviceInfo.ip;
@@ -101,29 +76,24 @@ export const authOptions: NextAuthOptions = {
           return {
             id: user._id.toString(),
             email: user.email,
-            name: user.name,
-            role: user.role,
-            subscription: user.subscription
+            name: user.name || null,
+            role: user.role || 'user',
+            subscription: user.subscription || 'free',
+            emailVerified: user.isVerified
           };
-        } catch (error: any) {
-          throw new Error(error.message);
+        } catch (error) {
+          console.error('Authorization error:', error);
+          return null;
         }
       }
     }),
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     }),
     GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!
+      clientId: process.env.GITHUB_ID || '',
+      clientSecret: process.env.GITHUB_SECRET || '',
     })
   ],
   pages: {
@@ -133,17 +103,11 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === 'credentials') {
-        return true;
-      }
-
-      // For OAuth providers
       try {
         await connectDB();
         const existingUser = await User.findOne({ email: user.email });
 
         if (existingUser) {
-          // Update OAuth information
           existingUser.provider = account?.provider;
           existingUser.providerId = account?.providerAccountId;
           if (!existingUser.isVerified) {
@@ -151,13 +115,15 @@ export const authOptions: NextAuthOptions = {
           }
           await existingUser.save();
         } else {
-          // Create new user for OAuth
           await User.create({
             email: user.email,
             name: user.name,
             provider: account?.provider,
             providerId: account?.providerAccountId,
             isVerified: true,
+            phone: '',
+            role: 'user',
+            subscription: 'free'
           });
         }
         return true;
@@ -166,14 +132,12 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.subscription = user.subscription;
-      }
-      if (account) {
-        token.provider = account.provider;
+        token.emailVerified = user.emailVerified;
       }
       return token;
     },
@@ -182,7 +146,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.subscription = token.subscription as string;
-        session.user.provider = token.provider as string;
+        session.user.emailVerified = token.emailVerified as boolean;
       }
       return session;
     }
@@ -191,6 +155,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
   },
+  secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development'
 };
 
