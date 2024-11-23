@@ -12,8 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Github } from 'lucide-react';
+import { Github, Shield } from 'lucide-react';
 import { PhoneInputField } from '@/components/phone-input';
+import { PasswordStrength } from '@/components/auth/password-strength';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -36,9 +37,11 @@ export default function RegisterPage() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, control } = useForm<RegisterFormData>({
+  const { register, handleSubmit, formState: { errors }, control, watch } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const password = watch('password', '');
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -54,7 +57,7 @@ export default function RegisterPage() {
       if (response.ok) {
         setStatus({
           type: 'success',
-          message: 'Registration successful! Please check your email to verify your account.',
+          message: 'Registration successful! Please check your email and phone to verify your accounts.',
         });
       } else {
         setStatus({
@@ -90,6 +93,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <Shield className="h-12 w-12 text-primary" />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Create an Account</h1>
           <p className="mt-2 text-gray-600">Sign up to get started</p>
         </div>
@@ -186,7 +192,7 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -197,6 +203,7 @@ export default function RegisterPage() {
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
+            <PasswordStrength password={password} />
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>

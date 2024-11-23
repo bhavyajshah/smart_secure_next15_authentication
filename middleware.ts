@@ -17,16 +17,26 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET
   });
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
-  const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
-  const isPremiumPage = request.nextUrl.pathname.startsWith('/premium');
-
   // Security headers
   const headers = new Headers(request.headers);
   headers.set('X-Frame-Options', 'DENY');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  headers.set('X-XSS-Protection', '1; mode=block');
+
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
+  const isPremiumPage = request.nextUrl.pathname.startsWith('/premium');
+  const isVerifyPage = request.nextUrl.pathname.startsWith('/verify');
+
+  // Allow access to verification pages without authentication
+  if (isVerifyPage) {
+    return NextResponse.next({
+      headers
+    });
+  }
 
   // Redirect authenticated users away from auth pages
   if (isAuthPage && token) {
@@ -48,6 +58,11 @@ export async function middleware(request: NextRequest) {
   // Check premium access
   if (isPremiumPage && token?.subscription !== 'premium') {
     return NextResponse.redirect(new URL('/subscription', request.url));
+  }
+
+  // Check email verification status
+  if (token && !token.emailVerified && !isVerifyPage) {
+    return NextResponse.redirect(new URL('/verify-email', request.url));
   }
 
   return NextResponse.next({

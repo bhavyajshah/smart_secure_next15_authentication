@@ -2,15 +2,16 @@ import { RateLimiterRedis } from 'rate-limiter-flexible';
 import redis from './redis';
 
 // Login rate limiter: 5 attempts per 15 minutes
-export const loginLimiter = new RateLimiterRedis({
+const loginLimiter = new RateLimiterRedis({
   storeClient: redis,
   keyPrefix: 'login_limit',
   points: 5,
   duration: 15 * 60,
+  blockDuration: 15 * 60, // Block for 15 minutes
 });
 
 // API rate limiter: 100 requests per minute
-export const apiLimiter = new RateLimiterRedis({
+const apiLimiter = new RateLimiterRedis({
   storeClient: redis,
   keyPrefix: 'api_limit',
   points: 100,
@@ -18,21 +19,52 @@ export const apiLimiter = new RateLimiterRedis({
 });
 
 // Password reset rate limiter: 3 attempts per hour
-export const resetLimiter = new RateLimiterRedis({
+const resetLimiter = new RateLimiterRedis({
   storeClient: redis,
   keyPrefix: 'reset_limit',
   points: 3,
   duration: 60 * 60,
+  blockDuration: 60 * 60, // Block for 1 hour
+});
+
+// 2FA verification rate limiter: 3 attempts per 5 minutes
+const totpLimiter = new RateLimiterRedis({
+  storeClient: redis,
+  keyPrefix: 'totp_limit',
+  points: 3,
+  duration: 5 * 60,
+  blockDuration: 5 * 60, // Block for 5 minutes
 });
 
 export const checkRateLimit = async (
-  limiter: RateLimiterRedis,
+  type: 'login' | 'api' | 'reset' | 'totp',
   key: string
 ): Promise<boolean> => {
+  const limiter = {
+    login: loginLimiter,
+    api: apiLimiter,
+    reset: resetLimiter,
+    totp: totpLimiter,
+  }[type];
+
   try {
     await limiter.consume(key);
     return true;
   } catch (error) {
     return false;
   }
+};
+
+export const resetRateLimit = async (
+  type: 'login' | 'api' | 'reset' | 'totp',
+  key: string
+): Promise<void> => {
+  const limiter = {
+    login: loginLimiter,
+    api: apiLimiter,
+    reset: resetLimiter,
+    totp: totpLimiter,
+  }[type];
+
+  await limiter.delete(key);
 };

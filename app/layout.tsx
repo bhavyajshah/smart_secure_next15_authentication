@@ -13,12 +13,7 @@ export const metadata: Metadata = {
   description: 'Secure authentication system with Next.js',
   keywords: ['Next.js', 'React', 'Authentication', 'Security'],
   authors: [{ name: 'Your Name' }],
-  viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
 }
 
 export default function RootLayout({

@@ -1,12 +1,14 @@
+"use client";
+
 import Link from 'next/link';
-import { getServerSession } from 'next-auth/next';
+import { useSession } from 'next-auth/react';
 import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from './user-menu';
 import { ThemeToggle } from './theme-toggle';
 
-export default async function Navbar() {
-  const session = await getServerSession();
+export default function Navbar() {
+  const { data: session } = useSession();
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,4 +35,3 @@ export default async function Navbar() {
     </nav>
   );
 }
-
