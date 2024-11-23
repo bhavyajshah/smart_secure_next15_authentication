@@ -1,4 +1,4 @@
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '../[...nextauth]/route';
 
@@ -8,6 +8,9 @@ export async function GET() {
     return NextResponse.json(session);
   } catch (error) {
     console.error('Session error:', error);
-    return new NextResponse(null, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch session' },
+      { status: 500 }
+    );
   }
 }
