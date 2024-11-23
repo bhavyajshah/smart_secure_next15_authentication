@@ -27,7 +27,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
         }
     }, [password]);
 
-    const getStrengthColor:any = () => {
+    const getStrengthColor = () => {
         if (strength <= 25) return 'bg-red-500';
         if (strength <= 50) return 'bg-orange-500';
         if (strength <= 75) return 'bg-yellow-500';
@@ -39,15 +39,16 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
             <Progress
                 value={strength}
                 className="h-2"
-                indicatorClassName={getStrengthColor()}
+                style={{
+                    '--progress-indicator-color': `var(--${getStrengthColor()})`
+                } as React.CSSProperties}
             />
             {feedback.length > 0 && (
                 <ul className="text-sm space-y-1">
                     {feedback.map((tip, index) => (
                         <li
                             key={index}
-                            className={`text-sm ${strength === 100 ? 'text-green-600' : 'text-gray-600'
-                                }`}
+                            className={`text-sm ${strength === 100 ? 'text-green-600' : 'text-gray-600'}`}
                         >
                             {tip}
                         </li>

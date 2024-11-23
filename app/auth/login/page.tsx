@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  totpCode: z.string().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -40,15 +42,24 @@ export default function LoginPage() {
         redirect: false,
         email: data.email,
         password: data.password,
+        totpCode: data.totpCode,
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        if (result.error === '2FA code required') {
+          setRequires2FA(true);
+          setError('Please enter your 2FA code');
+          return;
+        }
+        setError(result.error);
         return;
       }
 
-      router.push(callbackUrl);
-      router.refresh();
+      if (result?.url) {
+        router.push(result.url);
+      } else {
+        router.push(callbackUrl);
+      }
     } catch (error) {
       setError('An error occurred. Please try again.');
     } finally {
@@ -98,6 +109,23 @@ export default function LoginPage() {
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
           </div>
+
+          {requires2FA && (
+            <div>
+              <Label htmlFor="totpCode">2FA Code</Label>
+              <Input
+                id="totpCode"
+                type="text"
+                {...register('totpCode')}
+                placeholder="Enter 6-digit code"
+                className={errors.totpCode ? 'border-red-500' : ''}
+                disabled={isLoading}
+              />
+              {errors.totpCode && (
+                <p className="text-red-500 text-sm mt-1">{errors.totpCode.message}</p>
+              )}
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}

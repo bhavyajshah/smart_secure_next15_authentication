@@ -1,14 +1,21 @@
 "use client";
 
+import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
-import Link from 'next/link';
 
 export default function AuthErrorPage() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
+
+    useEffect(() => {
+        if (error) {
+            console.error('Authentication error:', error);
+        }
+    }, [error]);
 
     const getErrorMessage = (error: string) => {
         switch (error) {
@@ -16,6 +23,8 @@ export default function AuthErrorPage() {
                 return 'Invalid email or password';
             case 'EmailNotVerified':
                 return 'Please verify your email before logging in';
+            case '2FA code required':
+                return 'Please enter your 2FA code';
             default:
                 return 'An error occurred during authentication';
         }

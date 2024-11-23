@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/db';
 import User from '@/lib/models/user';
-import { cacheGet, cacheSet } from '@/lib/redis';
 
 export async function GET() {
   try {
@@ -16,14 +15,6 @@ export async function GET() {
     }
 
     await connectDB();
-
-    // Try to get stats from cache
-    const cacheKey = 'dashboard:stats';
-    const cachedStats = await cacheGet(cacheKey);
-
-    if (cachedStats) {
-      return NextResponse.json(cachedStats);
-    }
 
     // Calculate real-time statistics
     const totalUsers = await User.countDocuments();
@@ -66,9 +57,6 @@ export async function GET() {
       ),
       recentLogins
     };
-
-    // Cache the results for 5 minutes
-    await cacheSet(cacheKey, stats, 300);
 
     return NextResponse.json(stats);
   } catch (error) {

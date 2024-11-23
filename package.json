@@ -37,7 +37,6 @@
     "cmdk": "^1.0.4",
     "date-fns": "^3.3.1",
     "geoip-lite": "^1.4.10",
-    "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.10.57",
     "lucide-react": "^0.344.0",
