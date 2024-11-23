@@ -1,12 +1,12 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { NextAuthProvider } from '@/components/providers/next-auth-provider';
-import { ThemeProvider } from '@/components/providers/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
-import Navbar from '@/components/navbar';
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { NextAuthProvider } from '@/components/providers/next-auth-provider'
+import { Toaster } from '@/components/ui/sonner'
+import Navbar from '@/components/navbar'
+import { ThemeProviderWrapper } from '@/components/providers/theme-provider-wrapper'
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'NextJS Authentication',
@@ -19,17 +19,17 @@ export const metadata: Metadata = {
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' },
   ],
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
+        <ThemeProviderWrapper
           attribute="class"
           defaultTheme="system"
           enableSystem
@@ -44,8 +44,9 @@ export default function RootLayout({
               <Toaster position="top-center" />
             </div>
           </NextAuthProvider>
-        </ThemeProvider>
+        </ThemeProviderWrapper>
       </body>
     </html>
-  );
+  )
 }
+
