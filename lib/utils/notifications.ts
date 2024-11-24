@@ -1,7 +1,7 @@
 import { IUser, INotification } from '@/lib/models/user';
 import { sendMail } from '@/lib/mail';
 
-export const createNotification = async (
+export const createNotification: any = async (
   user: IUser,
   type: 'security' | 'info' | 'warning',
   title: string,
@@ -20,16 +20,16 @@ export const createNotification = async (
   await user.save();
 
   if (user.preferences.emailNotifications) {
-    await sendMail({
-      to: user.email,
-      subject: title,
-      html: `
+    await sendMail(
+      user.email,
+      title,
+      `
         <div>
           <h1>${title}</h1>
           <p>${message}</p>
         </div>
-      `,
-    });
+      `
+    );
   }
 
   return notification;

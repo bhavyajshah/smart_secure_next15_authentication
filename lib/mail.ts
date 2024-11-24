@@ -10,25 +10,37 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export const sendMail = async (
+  to: string,
+  subject: string,
+  html: string
+): Promise<void> => {
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject,
+    html,
+  });
+};
+
 export const sendVerificationEmail = async (
   to: string,
   token: string
 ): Promise<void> => {
   const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+  await sendMail(
     to,
-    subject: 'Verify your email address',
-    html: `
+    'Verify your email address',
+    `
       <div>
         <h1>Email Verification</h1>
         <p>Please click the link below to verify your email address:</p>
         <a href="${verificationUrl}">Verify Email</a>
         <p>This link will expire in 24 hours.</p>
       </div>
-    `,
-  });
+    `
+  );
 };
 
 export const sendPasswordResetEmail = async (
@@ -37,11 +49,10 @@ export const sendPasswordResetEmail = async (
 ): Promise<void> => {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+  await sendMail(
     to,
-    subject: 'Reset your password',
-    html: `
+    'Reset your password',
+    `
       <div>
         <h1>Password Reset Request</h1>
         <p>Please click the link below to reset your password:</p>
@@ -49,6 +60,7 @@ export const sendPasswordResetEmail = async (
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request this, please ignore this email.</p>
       </div>
-    `,
-  });
+    `
+  );
 };
+

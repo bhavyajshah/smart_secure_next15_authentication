@@ -32,7 +32,6 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-          suppressHydrationWarning
         >
           <NextAuthProvider>
             <div className="min-h-screen bg-background">
