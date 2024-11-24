@@ -87,6 +87,7 @@
   "devDependencies": {
     "@types/geoip-lite": "^1.4.4",
     "@types/mongoose": "^5.11.97",
+    "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
     "@types/ua-parser-js": "^0.7.39",
     "@types/zxcvbn": "^4.4.5",
