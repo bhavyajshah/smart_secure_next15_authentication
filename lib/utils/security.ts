@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { authenticator } from 'otplib';
-import geoip from 'geoip-lite';
 import UAParser from 'ua-parser-js';
 
 export const generateOTP = () => {
@@ -19,14 +18,13 @@ export const generateBackupCodes = (count: number = 10): string[] => {
 
 export const getDeviceInfo = (userAgent: string, ip: string) => {
   const parser = new UAParser(userAgent);
-  const geo = geoip.lookup(ip);
 
   return {
     deviceType: parser.getDevice().type || 'desktop',
     browser: `${parser.getBrowser().name} ${parser.getBrowser().version}`,
     os: `${parser.getOS().name} ${parser.getOS().version}`,
     ip,
-    location: geo ? `${geo.city}, ${geo.country}` : undefined,
+    location: 'Unknown', // Simplified location handling
   };
 };
 

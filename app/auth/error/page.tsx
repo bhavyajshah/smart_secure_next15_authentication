@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
 
-export default function AuthErrorPage() {
+function ErrorContent() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
-
-    useEffect(() => {
-        if (error) {
-            console.error('Authentication error:', error);
-        }
-    }, [error]);
 
     const getErrorMessage = (error: string) => {
         switch (error) {
@@ -50,5 +44,13 @@ export default function AuthErrorPage() {
                 </div>
             </Card>
         </div>
+    );
+}
+
+export default function AuthErrorPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ErrorContent />
+        </Suspense>
     );
 }

@@ -11,7 +11,6 @@ export interface IDevice {
   browser: string;
   os: string;
   ip: string;
-  location?: string;
   lastActive: Date;
   isCurrentDevice?: boolean;
 }
@@ -62,7 +61,6 @@ export interface IUser extends mongoose.Document {
     timestamp: Date;
     ip: string;
     userAgent: string;
-    location?: string;
     success: boolean;
   }>;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -139,7 +137,6 @@ const userSchema = new mongoose.Schema<IUser>(
       browser: String,
       os: String,
       ip: String,
-      location: String,
       lastActive: Date,
       isCurrentDevice: Boolean,
     }],
@@ -189,7 +186,6 @@ const userSchema = new mongoose.Schema<IUser>(
       },
       ip: String,
       userAgent: String,
-      location: String,
       success: Boolean,
     }],
   },

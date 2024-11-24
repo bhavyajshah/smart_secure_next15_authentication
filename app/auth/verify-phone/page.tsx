@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
-import { CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const verifyPhoneSchema = z.object({
@@ -19,7 +18,7 @@ const verifyPhoneSchema = z.object({
 
 type VerifyPhoneFormData = z.infer<typeof verifyPhoneSchema>;
 
-export default function VerifyPhonePage() {
+function VerifyPhoneContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -153,5 +152,13 @@ export default function VerifyPhonePage() {
                 </div>
             </Card>
         </div>
+    );
+}
+
+export default function VerifyPhonePage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <VerifyPhoneContent />
+        </Suspense>
     );
 }
