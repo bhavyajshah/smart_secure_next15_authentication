@@ -5,136 +5,258 @@ import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Settings, Shield, Activity, Smartphone } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format } from 'date-fns';
+import { RealTimeStats } from '@/components/admin/real-time-stats';
+import { UserStats } from '@/components/admin/user-stats';
+import { ActivityLog } from '@/components/admin/activity-log';
+import { UserDetailsDialog } from '@/components/admin/user-details-dialog';
 import { DashboardHeader } from '@/components/dashboard/header';
-import { NotificationsList } from '@/components/dashboard/notifications';
-import { DevicesList } from '@/components/dashboard/devices';
-import { ActivityChart } from '@/components/dashboard/activity-chart';
-import { SecurityOverview } from '@/components/dashboard/security-overview';
 
-interface DashboardData {
-  notifications: any[];
-  devices: any[];
-  loginHistory: any[];
-  securityScore: number;
+interface User {
+  _id: string;
+  email: string;
+  name?: string;
+  role: string;
+  isVerified: boolean;
+  subscription: string;
+  lastLogin?: Date;
 }
 
-export default function DashboardPage() {
+interface DashboardStats {
+  totalUsers: number;
+  verifiedUsers: number;
+  activeUsers: number;
+  usersByRole: Record<string, number>;
+  usersBySubscription: Record<string, number>;
+  recentLogins: Array<{
+    email: string;
+    timestamp: Date;
+    success: boolean;
+    location?: string;
+  }>;
+}
+
+export default function AdminDashboard() {
   const { data: session } = useSession();
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchData();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchData = async () => {
+    await Promise.all([fetchUsers(), fetchStats()]);
+  };
+
+  const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/admin/users');
       if (response.ok) {
-        const dashboardData = await response.json();
-        setData(dashboardData);
+        const data = await response.json();
+        setUsers(data.users);
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const updateUserRole = async (userId: string, role: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+
+      if (response.ok) {
+        toast.success('User role updated successfully');
+        fetchUsers();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update user role');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
+
+  const updateSubscription = async (userId: string, subscription: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/subscription`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription }),
+      });
+
+      if (response.ok) {
+        toast.success('Subscription updated successfully');
+        fetchUsers();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update subscription');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="container mx-auto py-8 space-y-8">
       <DashboardHeader user={session?.user} />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 md:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">Activity Overview</h2>
-            <Badge variant="secondary">Last 30 days</Badge>
-          </div>
-          <ActivityChart data={data?.loginHistory || []} />
-        </Card>
-
-        <Card className="p-6">
-          <SecurityOverview score={data?.securityScore || 0} />
-        </Card>
-      </div>
-
-      <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 mr-2" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="devices">
-            <Smartphone className="h-4 w-4 mr-2" />
-            Devices
-          </TabsTrigger>
-          <TabsTrigger value="activity">
-            <Activity className="h-4 w-4 mr-2" />
-            Activity
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="notifications" className="space-y-4">
-          <Card className="p-6">
-            <ScrollArea className="h-[400px]">
-              <NotificationsList 
-                notifications={data?.notifications || []} 
-                onRefresh={fetchDashboardData}
-              />
-            </ScrollArea>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="devices" className="space-y-4">
-          <Card className="p-6">
-            <DevicesList 
-              devices={data?.devices || []} 
-              onRefresh={fetchDashboardData}
+      {stats && <RealTimeStats stats={stats} />}
+      <Card className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-xs"
             />
-          </Card>
-        </TabsContent>
+            <Button onClick={fetchData}>Refresh</Button>
+          </div>
+        </div>
 
-        <TabsContent value="activity" className="space-y-4">
-          <Card className="p-6">
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold">Recent Activity</h3>
-              <div className="space-y-4">
-                {data?.loginHistory?.slice(0, 10).map((activity: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-medium">
-                        {activity.success ? 'Successful login' : 'Failed login attempt'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {activity.location || 'Unknown location'} • {activity.browser}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(activity.timestamp), 'PPp')}
-                    </p>
-                  </div>
-                ))}
-              </div>
+        <Tabs default Value="overview">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            {stats && <UserStats stats={stats} />}
+          </TabsContent>
+
+          <TabsContent value="users">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Subscription</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.name || '-'}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => updateUserRole(user._id, value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="moderator">Moderator</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${user.isVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {user.isVerified ? 'Verified' : 'Unverified'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.subscription}
+                          onValueChange={(value) => updateSubscription(user._id, value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        {user.lastLogin
+                          ? format(new Date(user.lastLogin), 'PPp')
+                          : 'Never'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedUser(user._id)}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+
+          <TabsContent value="activity">
+            {stats && <ActivityLog recentLogins={stats.recentLogins} />}
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      <UserDetailsDialog
+        userId={selectedUser || ''}
+        open={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+      />
     </div>
   );
 }
